@@ -31,7 +31,8 @@ on:
       push_latest:
         description: "If true, also push 'latest' tag"
         required: false
-        default: "false"
+        type: boolean
+        default: false
 
 # Ensure we can push tags
 permissions:
