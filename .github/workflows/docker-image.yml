@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build and Push the winebase Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: ./
           file: ./Dockerfile.wine
@@ -85,21 +85,8 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Build and Push the winebase Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./
-          file: ./Dockerfile.wine
-          platforms: linux/amd64
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.COMMIT_SHA_SHORT }}
-            ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.DOCKER_IMAGE_TAG }}
-
       - name: Build and Push the Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: ./
           file: ./Dockerfile
@@ -110,5 +97,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.COMMIT_SHA_SHORT }}
             ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.DOCKER_IMAGE_TAG }}
-      
-
