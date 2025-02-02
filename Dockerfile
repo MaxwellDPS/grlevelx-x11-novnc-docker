@@ -1,8 +1,8 @@
 ARG PLATFORM=linux/amd64
 FROM --platform=$PLATFORM professorcha0s/winebase:latest
 
-ARG GRLEVEL3_URL=https://www.grlevelx.com/downloads/grlevel3_2_setup.exe \
-    GRLEVEL3_UPDATE_URL=https://www.grlevelx.com/downloads/grlevel3_2_update.exe
+ARG GRLEVEL3_URL=https://www.grlevelx.com/downloads/gr2analyst_3_setup.exe \
+    GRLEVEL3_UPDATE_URL=https://www.grlevelx.com/downloads/gr2analyst_3_update.exe
 
 # Download GRLevel3 installer
 RUN wget -O /wine/drive_c/grlevelx/gr2analyst_3_setup.exe $GRLEVEL3_URL && \
