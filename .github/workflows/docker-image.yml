@@ -55,6 +55,16 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
+        # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+
       - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@v6
         with:
@@ -63,7 +73,7 @@ jobs:
           platforms: linux/amd64
           push: true
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
-          cache-to:  type=registry,ref=${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
           tags: |
             ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
             ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}
