@@ -37,7 +37,8 @@ RUN dpkg --add-architecture i386 && \
         libvulkan-dev:i386 \
         cabextract \
         winbind \
-        sudo
+        sudo \
+        nginx
 
 # Create wine user
 RUN adduser --disabled-password wine && \
