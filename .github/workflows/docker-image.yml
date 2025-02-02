@@ -2,30 +2,34 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
-    tags: [ "v[0-9]+.[0-9]+.[0-9]+" ]
+    branches:
+      - "master"
+    tags: "v[0-9]+.[0-9]+.[0-9]+"
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - "master"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag to build"
+      new_tag:
+        description: "Create and use this tag (e.g. v1.2.3). Leave blank to skip."
         required: false
-        default: "v0.0.0"
+        default: ""
+      push_latest:
+        description: "If true, also push 'latest' tag"
+        required: false
+        default: "false"
+
+# Ensure we can push tags
+permissions:
+  contents: write
 
 jobs:
   build-docker-images:
-    # Prevent multiple runs from colliding (optional).
-    concurrency:
-      group: docker-image-ci-${{ github.ref }}
-      cancel-in-progress: true
-
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        # You can give a friendly name, Dockerfile path, or Docker repo name as you like
         include:
           - name: winebase
             dockerfile: Dockerfile.wine
@@ -33,23 +37,74 @@ jobs:
             dockerfile: Dockerfile
 
     steps:
-      - name: Check out code
+      - name: Check out the code
         uses: actions/checkout@v3
 
-      - name: Detect Docker image tags
+      ################################################################
+      # Step 1: Optionally create a new Git tag if triggered manually
+      ################################################################
+      - name: Create git tag (when workflow_dispatch + new_tag)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.new_tag != '' }}
+        run: |
+          echo "Creating and pushing tag '${{ github.event.inputs.new_tag }}'..."
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "${{ github.event.inputs.new_tag }}"
+          git push origin "${{ github.event.inputs.new_tag }}"
+
+      ################################################################
+      # Step 2: Decide on environment variables for tagging
+      ################################################################
+      - name: Set environment variables
         id: detect
         run: |
-          # If this is a tag push (refs/tags/vX.Y.Z) -> use that tag
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-            echo "DOCKER_IMAGE_TAG=$(echo ${{ github.ref_name }} )" >> $GITHUB_ENV
+          # Always set short commit SHA for reference
+          echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
+          # If manually triggered with a new_tag, use that
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.new_tag }}" ]]; then
+            echo "DOCKER_IMAGE_TAG=${{ github.event.inputs.new_tag }}" >> $GITHUB_ENV
+
+          # If push with a real Git tag, e.g., refs/tags/v1.2.3
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            echo "DOCKER_IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+
+          # Otherwise, it's either push to a branch or PR
           else
-            # Otherwise, default to the short SHA
-            echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
             echo "DOCKER_IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
           fi
 
-      - name: Login to DockerHub
+          # Decide if we also push the 'latest' tag
+          # 1) If we're on push to master
+          # 2) Or the user set push_latest=true in workflow_dispatch
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          else
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+          fi
+
+      - name: Show environment
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Commit SHA Short: ${{ env.COMMIT_SHA_SHORT }}"
+          echo "Docker Image Tag: ${{ env.DOCKER_IMAGE_TAG }}"
+          echo "Push Latest: ${{ env.PUSH_LATEST }}"
+
+      - name: Generate Docker tag list
+        id: taglist
+        run: |
+          # Always include short commit + DOCKER_IMAGE_TAG
+          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
+          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+
+          # Optionally include the "latest" tag
+          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
+            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
@@ -60,7 +115,7 @@ jobs:
         with:
           platforms: linux/amd64
 
-      - name: Build and push ${{ matrix.name }} image
+      - name: Build & push ${{ matrix.name }} image
         uses: docker/build-push-action@v6
         with:
           context: ./
@@ -69,6 +124,4 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
-            ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}
+          tags: ${{ steps.taglist.outputs.tag_list }}
