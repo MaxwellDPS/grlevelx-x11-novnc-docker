@@ -23,19 +23,12 @@ on:
 permissions:
   contents: write
 
+###############################################################################
+# Job 1: Build winebase
+###############################################################################
 jobs:
-  build-docker-images:
+  build-winebase:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: winebase
-            dockerfile: Dockerfile.wine
-          - name: grlevelx
-            dockerfile: Dockerfile
-
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
@@ -92,16 +85,16 @@ jobs:
           echo "Docker Image Tag: ${{ env.DOCKER_IMAGE_TAG }}"
           echo "Push Latest: ${{ env.PUSH_LATEST }}"
 
-      - name: Generate Docker tag list
-        id: taglist
+      - name: Generate Docker tag list (winebase)
+        id: taglist-winebase
         run: |
           # Always include short commit + DOCKER_IMAGE_TAG
-          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
-          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
+          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:latest" >> $GITHUB_OUTPUT
+            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/winebase:latest" >> $GITHUB_OUTPUT
           fi
 
       - name: Docker login
@@ -115,13 +108,96 @@ jobs:
         with:
           platforms: linux/amd64
 
-      - name: Build & push ${{ matrix.name }} image
+      - name: Build & push winebase image
         uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./${{ matrix.dockerfile }}
+          file: ./Dockerfile.wine
           platforms: linux/amd64
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ steps.taglist.outputs.tag_list }}
+          tags: ${{ steps.taglist-winebase.outputs.tag_list }}
+
+  ###############################################################################
+  # Job 2: Build grlevelx (needs winebase)
+  ###############################################################################
+  build-grlevelx:
+    runs-on: ubuntu-latest
+    needs: build-winebase  # <-- This ensures grlevelx waits for winebase
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      ################################################################
+      # Step 2 (again): Decide on environment variables for tagging
+      #
+      # Typically you'd share outputs from build-winebase, but if
+      # you want them recalculated the same way, just repeat.
+      ################################################################
+      - name: Set environment variables
+        id: detect
+        run: |
+          # Always set short commit SHA for reference
+          echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
+          # If manually triggered with a new_tag, use that
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.new_tag }}" ]]; then
+            echo "DOCKER_IMAGE_TAG=${{ github.event.inputs.new_tag }}" >> $GITHUB_ENV
+
+          # If push with a real Git tag, e.g., refs/tags/v1.2.3
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            echo "DOCKER_IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+
+          # Otherwise, it's either push to a branch or PR
+          else
+            echo "DOCKER_IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          fi
+
+          # Decide if we also push the 'latest' tag
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          else
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+          fi
+
+      - name: Show environment
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Commit SHA Short: ${{ env.COMMIT_SHA_SHORT }}"
+          echo "Docker Image Tag: ${{ env.DOCKER_IMAGE_TAG }}"
+          echo "Push Latest: ${{ env.PUSH_LATEST }}"
+
+      - name: Generate Docker tag list (grlevelx)
+        id: taglist-grlevelx
+        run: |
+          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
+          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+
+          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
+            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/grlevelx:latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+
+      - name: Build & push grlevelx image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ steps.taglist-grlevelx.outputs.tag_list }}
