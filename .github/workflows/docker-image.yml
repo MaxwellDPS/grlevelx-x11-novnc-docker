@@ -3,7 +3,7 @@ name: Docker Image CI
 on:
   push:
     branches:
-      - "master"
+      - "main"
     tags: "v[0-9]+.[0-9]+.[0-9]+"
     paths:
       - "Dockerfile"
@@ -14,7 +14,7 @@ on:
       - utils/**
   pull_request:
     branches:
-      - "master"
+      - "main"
     paths:
       - "Dockerfile"
       - "Dockerfile.wine"
@@ -82,9 +82,9 @@ jobs:
           fi
 
           # Decide if we also push the 'latest' tag
-          # 1) If we're on push to master
+          # 1) If we're on push to main
           # 2) Or the user set push_latest=true in workflow_dispatch
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]]; then
             echo "PUSH_LATEST=true" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
             echo "PUSH_LATEST=true" >> $GITHUB_ENV
@@ -169,7 +169,7 @@ jobs:
           fi
 
           # Decide if we also push the 'latest' tag
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]]; then
             echo "PUSH_LATEST=true" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
             echo "PUSH_LATEST=true" >> $GITHUB_ENV
