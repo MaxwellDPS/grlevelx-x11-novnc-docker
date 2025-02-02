@@ -1,12 +1,4 @@
-## wine-x11-novnc-docker
-
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/solarkennedy/wine-x11-novnc-docker/latest)
-![Docker Pulls](https://img.shields.io/docker/pulls/solarkennedy/wine-x11-novnc-docker)
-
-Not a very good name, is it?
-
-Ever wanted to containerize your wine applications and access them via
-a web browser? No? Neither did I!
+## granalyst2-novnc-docker
 
 This container runs:
 
@@ -16,30 +8,13 @@ This container runs:
 * Fluxbox - a small window manager
 * Explorer.exe - to demo that it works
 
-This is a [trusted build](https://registry.hub.docker.com/u/solarkennedy/wine-x11-novnc-docker/)
-on the Docker Hub.
-
 ## Run It
 
     # Start the container
-    docker run --rm -p 8080:8080 solarkennedy/wine-x11-novnc-docker
+docker run --platform linux/amd64 --rm -p 8080:8080 -p 8081:8081 -p 9001:9001 -e RESOLUTION=1920x1080x24 professorcha0s/grlevelx:latest
 
-    # Show the container ID (this is the VNC password)
-    docker ps
+    docker run --rm -p 8080:8080 -p 9001:9001 professorcha0s/grlevelx:latest
 
-    # Open VNC in your web browser
-    xdg-open http://localhost:8080
+docker buildx build --platform linux/amd64 -f Dockerfile -t professorcha0s/grlevelx:latest . 
 
-
-In your web browser, type the container ID as password, and then you should see the default application, explorer.exe:
-
-![Explorer Screenshot](https://raw.githubusercontent.com/solarkennedy/wine-x11-novnc-docker/master/screenshot.png)
-
-## Modifying
-
-This is a base image. You should fork or use this base image to run your own wine programs?
-
-## Issues
-
-* Wine could be optimized a bit
-* Fluxbox could be skinned or reduced
+docker run --rm -p 8080:8080 -p 8081:8081 -p 9001:9001 -e RESOLUTION=1920x1080x24 professorcha0s/grlevelx:latest

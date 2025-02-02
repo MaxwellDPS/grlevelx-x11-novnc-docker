@@ -1,31 +1,34 @@
-FROM ubuntu:focal
+ARG PLATFORM=linux/amd64
+FROM --platform=$PLATFORM professorcha0s/winebase:latest
 
-ENV HOME /root
-ENV DEBIAN_FRONTEND noninteractive
-ENV LC_ALL C.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
+ARG GRLEVEL3_URL=https://www.grlevelx.com/downloads/grlevel3_2_setup.exe \
+    GRLEVEL3_UPDATE_URL=https://www.grlevelx.com/downloads/grlevel3_2_update.exe
 
-RUN dpkg --add-architecture i386 && \
-    apt-get update && apt-get -y install python3 python-is-python3 xvfb x11vnc xdotool wget tar supervisor net-tools fluxbox gnupg2 && \
-    echo 'echo -n $HOSTNAME' > /root/x11vnc_password.sh && chmod +x /root/x11vnc_password.sh && \
-    wget -O - https://dl.winehq.org/wine-builds/winehq.key | apt-key add - && \
-    echo 'deb https://dl.winehq.org/wine-builds/ubuntu/ focal main' | tee /etc/apt/sources.list.d/winehq.list && \
-    apt-get update && apt-get -y install winehq-stable=7.0.1~focal-1 && \
-    mkdir /opt/wine-stable/share/wine/mono && wget -O - https://dl.winehq.org/wine/wine-mono/7.0.0/wine-mono-7.0.0-x86.tar.xz | tar -xJv -C /opt/wine-stable/share/wine/mono && \
-    mkdir /opt/wine-stable/share/wine/gecko && wget -O /opt/wine-stable/share/wine/gecko/wine-gecko-2.47.2-x86.msi https://dl.winehq.org/wine/wine-gecko/2.47.2/wine-gecko-2.47.2-x86.msi && wget -O /opt/wine-stable/share/wine/gecko/wine-gecko-2.47.2-x86_64.msi https://dl.winehq.org/wine/wine-gecko/2.47.2/wine-gecko-2.47.2-x86_64.msi && \
-    apt-get -y full-upgrade && apt-get clean && rm -rf /var/lib/apt/lists/*
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-ADD supervisord-wine.conf /etc/supervisor/conf.d/supervisord-wine.conf
+# Download GRLevel3 installer
+RUN wget -O /wine/drive_c/grlevelx/gr2analyst_3_setup.exe $GRLEVEL3_URL && \
+    wget -O /wine/drive_c/grlevelx/grlevel3_2_update.exe $GRLEVEL3_UPDATE_URL 
 
-ENV WINEPREFIX /root/prefix32
-ENV WINEARCH win32
-ENV DISPLAY :0
+# # Copy GRLevel3 installer
+# ADD grlevelx/ /wine/drive_c/grlevelx/
 
-WORKDIR /root/
-RUN wget -O - https://github.com/novnc/noVNC/archive/v1.3.0.tar.gz | tar -xzv -C /root/ && mv /root/noVNC-1.3.0 /root/novnc && ln -s /root/novnc/vnc_lite.html /root/novnc/index.html && \
-    wget -O - https://github.com/novnc/websockify/archive/v0.11.0.tar.gz | tar -xzv -C /root/ && mv /root/websockify-0.11.0 /root/novnc/utils/websockify
+# Install directx
+# RUN WINEPREFIX=/wine WINEARCH=win32 winetricks dxvk
+RUN WINEPREFIX=/wine WINEARCH=win32 winetricks d3dx11_43
 
-EXPOSE 8080
+# Install GRLevel3
+RUN rm -f /tmp/.X0-lock && /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
+    WINEPREFIX=/wine WINEARCH=win32 wine /wine/drive_c/grlevelx/gr2analyst_3_setup.exe /VERYSILENT && \
+    WINEPREFIX=/wine WINEARCH=win32 wine /wine/drive_c/grlevelx/grlevel3_2_update.exe /VERYSILENT
 
-CMD ["/usr/bin/supervisord"]
+# Copy GRLevel3 supervisord config
+ADD app/grlevelx.conf /etc/supervisor/conf.d/
+
+# Copy grlevelx.sh
+ADD app/grlevelx.sh /opt/grlevelx.sh
+RUN chmod +x /opt/grlevelx.sh
+
+# Setcap on wine binaries
+# RUN  setcap cap_net_raw+epi /usr/bin/wine-preloader
+
+# Expose noVNC port
+EXPOSE 8080 

@@ -1,0 +1,101 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV LC_ALL=C.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+ENV DISPLAY=:0
+
+RUN dpkg --add-architecture i386 && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        software-properties-common \
+        ca-certificates \
+        language-pack-en \
+        locales \
+        locales-all \
+        tzdata \
+        python3 \
+        python-is-python3 \
+        xvfb \
+        x11vnc \
+        xdotool \
+        wget \
+        tar \
+        supervisor \
+        net-tools \
+        fluxbox \
+        gnupg2 \
+        apt-transport-https \
+        xz-utils\
+        libgl1 \
+        libgl1:i386 \
+        libglx-mesa0 \
+        libglx-mesa0:i386 \
+        libvulkan-dev \
+        libvulkan-dev:i386 \
+        cabextract \
+        winbind \
+        sudo
+
+# Create wine user
+RUN adduser --disabled-password wine && \
+    adduser wine sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+ARG WINE_VERSION=winehq-stable
+ENV WINEPREFIX=/wine
+ENV WINEARCH=win32
+
+# Configure wine prefix
+RUN mkdir /wine
+
+# Install Wine
+RUN mkdir -pm755 /etc/apt/keyrings && \
+    wget -O - https://dl.winehq.org/wine-builds/winehq.key | gpg --dearmor -o /etc/apt/keyrings/winehq-archive.key - && \
+    wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/noble/winehq-noble.sources && \
+    apt-get update -y && \
+    apt-get install -y --install-recommends $WINE_VERSION
+
+# # Install winetricks
+RUN wget -nv https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks -O /tmp/winetricks \
+    && install --mode 755 /tmp/winetricks /usr/local/bin
+
+# Clean up
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# RUN  chown -R wine:wine /wine && chmod -R 755 /wine
+
+# Switch to wine user
+# USER wine
+
+# Configure wine as win10
+# RUN /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
+RUN  WINEPREFIX=/wine WINEARCH=win32 wineboot --init && \
+    WINEPREFIX=/wine WINEARCH=win32 winetricks win10
+
+# Switch to root user
+USER root
+WORKDIR /opt/
+
+# Install noVNC
+RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C /opt/ &&\
+    mv /opt/noVNC-1.5.0 /opt/novnc && ln -s /opt/novnc/vnc_lite.html /opt/novnc/index.html && \
+    wget -O - https://github.com/novnc/websockify/archive/v0.12.0.tar.gz | tar -xzv -C /opt/ && \
+    mv /opt/websockify-0.12.0 /opt/novnc/utils/websockify && \
+    chmod -R 755 /opt/novnc/
+
+# Install supervisord config
+ADD supervisor/ /etc/supervisor/
+
+# Add scripts
+ADD scripts/ /opt/
+RUN chmod +x /opt/*.sh
+
+# Expose supervisord port
+EXPOSE 9001
+
+# Set entrypoint
+ENTRYPOINT [ "/opt/entrypoint.sh" ]
