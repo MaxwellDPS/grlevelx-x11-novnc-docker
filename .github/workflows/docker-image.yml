@@ -29,9 +29,9 @@ jobs:
         include:
           - name: winebase
             dockerfile: Dockerfile.wine
-          - name: GRLevelX
+          - name: grlevelx
             dockerfile: Dockerfile
-          
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -54,7 +54,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-      
+
       - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@v6
         with:
@@ -62,8 +62,8 @@ jobs:
           file: ./${{ matrix.dockerfile }}
           platforms: linux/amd64
           push: true
-          cache-from: type=gha
+          cache-from: type=registry,ref=docker.io/professorcha0s/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
           cache-to: type=gha,mode=max
           tags: |
-            ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.COMMIT_SHA_SHORT }}-${{ matrix.name }}
-            ${{ secrets.DOCKER_HUB_USER }}/grlevelx-docker:${{ env.DOCKER_IMAGE_TAG }}-${{ matrix.name }}
+            ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
+            ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}
