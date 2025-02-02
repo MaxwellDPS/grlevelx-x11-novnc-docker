@@ -36,9 +36,6 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Show GITHUB context
-        run: echo "${{ toJson(github) }}"
-      
       - name: Detect Docker image tags
         id: detect
         run: |
