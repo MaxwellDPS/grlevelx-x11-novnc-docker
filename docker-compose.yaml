@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  grlevelx:
+    image: professorcha0s/grlevelx:latest
+    container_name: grlevelx
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - RESOLUTION=1920x1080x24
+    ports:
+      - "8080:80"
+    restart: unless-stopped
