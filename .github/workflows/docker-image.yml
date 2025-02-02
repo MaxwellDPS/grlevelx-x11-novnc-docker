@@ -63,7 +63,7 @@ jobs:
           platforms: linux/amd64
           push: true
           cache-from: type=registry,ref=docker.io/professorcha0s/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
-          cache-to: type=gha,mode=max
+          cache-to:  type=registry,ref=docker.io/professorcha0s/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
           tags: |
             ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.COMMIT_SHA_SHORT }}
             ${{ secrets.DOCKER_HUB_USER }}/${{ matrix.name }}:${{ env.DOCKER_IMAGE_TAG }}
