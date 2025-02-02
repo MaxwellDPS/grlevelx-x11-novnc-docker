@@ -67,11 +67,6 @@ RUN wget -nv https://raw.githubusercontent.com/Winetricks/winetricks/master/src/
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# RUN  chown -R wine:wine /wine && chmod -R 755 /wine
-
-# Switch to wine user
-# USER wine
-
 # Configure wine as win10
 # RUN /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
 RUN  WINEPREFIX=/wine WINEARCH=win32 wineboot --init && \
