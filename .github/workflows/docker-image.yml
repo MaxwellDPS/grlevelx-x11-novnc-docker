@@ -99,7 +99,7 @@ jobs:
       - name: Adding markdown
         run: |
           echo '## Output 📦' >> $GITHUB_STEP_SUMMARY
-          echo '```json\n${{ steps.build.outputs.metadata }}```\n' >> $GITHUB_STEP_SUMMARY
+          echo '```json\n${{ steps.build.outputs.metadata }}\n```\n\n' >> $GITHUB_STEP_SUMMARY
           echo '| Image | digest |\n|---|---|\n|${{ steps.build.outputs.imageid }}|${{ steps.build.outputs.digest }}|' >> $GITHUB_STEP_SUMMARY
 
   ###############################################################################
