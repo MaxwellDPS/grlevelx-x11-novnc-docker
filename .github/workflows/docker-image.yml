@@ -73,24 +73,26 @@ jobs:
           tag_list=""
 
           # Always include short commit
-          tag_list+="${DOCKER_USER}/${IMAGE_NAME}:${{ env.COMMIT_SHA_SHORT }}"
+          tag_list+="${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.COMMIT_SHA_SHORT }}"
 
           # If we have a branch name, add it
           if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.BRANCH_NAME }}"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.BRANCH_NAME }}"
           fi
 
           # If we have a semver/user tag (i.e. DOCKER_IMAGE_TAG is set and not empty), add it
           if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.DOCKER_IMAGE_TAG }}"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.DOCKER_IMAGE_TAG }}"
           fi
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:latest"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:latest"
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
+          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list"
+
 
       - name: Docker login
         uses: docker/login-action@v3
@@ -127,30 +129,28 @@ jobs:
       - name: Generate Docker tag list (grlevelx)
         id: taglist-grlevelx
         run: |
-          DOCKER_USER="${{ secrets.DOCKER_HUB_USER }}"
-          IMAGE_NAME="grlevelx"
-
           tag_list=""
 
           # Always include short commit
-          tag_list+="${DOCKER_USER}/${IMAGE_NAME}:${{ env.COMMIT_SHA_SHORT }}"
+          tag_list+="${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}"
 
           # If we have a branch name, add it
           if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.BRANCH_NAME }}"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.BRANCH_NAME }}"
           fi
 
           # If we have a semver/user tag, add it
           if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.DOCKER_IMAGE_TAG }}"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}"
           fi
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:latest"
+            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:latest"
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
+          echo "::notice file=.github/workflows/docker-image.yml,line=151,endLine=151,title=Generated Docker tags for grlevelx::$tag_list"
 
       - name: Docker login
         uses: docker/login-action@v3
