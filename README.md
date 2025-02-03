@@ -1,4 +1,5 @@
 ## granalyst2-novnc-docker
+[![Docker Image CI](https://github.com/MaxwellDPS/grlevelx-x11-novnc-docker/actions/workflows/docker-image.yml/badge.svg)](https://github.com/MaxwellDPS/grlevelx-x11-novnc-docker/actions/workflows/docker-image.yml)
 
 This container runs:
 
