@@ -68,8 +68,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
-            type=short_sha
-            type=branch
 
 
       - name: Docker login
@@ -94,6 +92,18 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build & push winebase latest tag
+        uses: docker/build-push-action@v6
+        if: ${{ inputs.push_latest == true }}
+        with:
+          context: ./
+          file: ./Dockerfile.wine
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/winebase:latest
 
   ###############################################################################
   # Job 2: Build grlevelx (needs winebase)
@@ -151,3 +161,15 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build & push grlevelx latest tag
+        uses: docker/build-push-action@v6
+        if: ${{ inputs.push_latest == true }}
+        with:
+          context: ./
+          file: ./Dockerfile.wine
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:latest
