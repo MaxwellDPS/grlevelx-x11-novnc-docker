@@ -91,7 +91,7 @@ jobs:
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
-          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list"
+          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list" >> $GITHUB_OUTPUT
 
 
       - name: Docker login
