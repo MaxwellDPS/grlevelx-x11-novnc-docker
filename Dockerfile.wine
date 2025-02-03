@@ -68,7 +68,6 @@ RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Configure wine as win10
-# RUN /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
 RUN  WINEPREFIX=/wine WINEARCH=win32 wineboot --init && \
     WINEPREFIX=/wine WINEARCH=win32 winetricks win10
 
@@ -86,7 +85,7 @@ RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C
 # Create noVNC web directories
 RUN mkdir -p /opt/novnc/web/ && mkdir -p /opt/novnc/web_ro/ && \
     ln -s /opt/novnc/app/ /opt/novnc/web/app  && \
-    ln -s  /opt/novnc/app/ /opt/novnc/web_ro/app/
+    ln -s  /opt/novnc/app/ /opt/novnc/web_ro/app
 
 # Add noVNC html
 ADD utils/vnc_ro.html /opt/novnc/web_ro/index.html
@@ -97,7 +96,6 @@ ADD supervisor/ /etc/supervisor/
 
 # Install supervisord config
 ADD utils/nginx.conf /etc/nginx/nginx.conf
-
 
 # Add scripts
 ADD scripts/ /opt/
