@@ -29,7 +29,7 @@ on:
         required: false
         default: ""
       push_latest:
-        description: Push latest tag?
+        description: Push latest tag
         required: false
         type: boolean
         default: false
