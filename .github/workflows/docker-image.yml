@@ -60,46 +60,35 @@ jobs:
           git tag "${{ github.event.inputs.new_tag }}"
           git push origin "${{ github.event.inputs.new_tag }}"
 
-      ################################################################
-      # Step 3: Build the list of Docker tags for winebase
-      ################################################################
-      - name: Generate Docker tag list (winebase)
-        id: taglist-winebase
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_HUB_USER }}
-        run: |
-          IMAGE_NAME="winebase"
-
-          # Start with empty string
-          tag_list=""
-
-          # Always include short commit
-          tag_list+="$DOCKER_USER/winebase:${{ env.COMMIT_SHA_SHORT }}"
-
-          # If we have a branch name, add it
-          if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"$DOCKER_USER/winebase:${{ env.BRANCH_NAME }}"
-          fi
-
-          # If we have a semver/user tag (i.e. DOCKER_IMAGE_TAG is set and not empty), add it
-          if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"$DOCKER_USER/winebase:${{ env.DOCKER_IMAGE_TAG }}"
-          fi
-
-          # Optionally include the "latest" tag
-          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"$DOCKER_USER/winebase:latest"
-          fi
-
-          echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
-          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list"
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/winebase
+            ghcr.io/${{ github.USER  }}/winebase
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=tag
+            type=ref,event=tag,pattern=v*
+            type=ref,event=tag,pattern=latest
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=short_sha
+            type=branch
 
 
       - name: Docker login
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -133,31 +122,54 @@ jobs:
           tag_list=""
 
           # Always include short commit
-          tag_list+="${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}"
+          tag_list+="${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}"
 
           # If we have a branch name, add it
           if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.BRANCH_NAME }}"
+            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.BRANCH_NAME }}"
           fi
 
           # If we have a semver/user tag, add it
           if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}"
+            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}"
           fi
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/grlevelx:latest"
+            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:latest"
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
           echo "::notice file=.github/workflows/docker-image.yml,line=151,endLine=151,title=Generated Docker tags for grlevelx::$tag_list"
 
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/grlevelx
+            ghcr.io/${{ github.USER  }}/grlevelx
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=tag
+            type=ref,event=tag,pattern=v*
+            type=ref,event=tag,pattern=latest
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=short_sha
+            type=branch
+
       - name: Docker login
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -174,4 +186,4 @@ jobs:
           build-args: WINE_TAG=${{ env.COMMIT_SHA_SHORT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ steps.taglist-grlevelx.outputs.tag_list }}
+         labels: ${{ steps.meta.outputs.labels }}
