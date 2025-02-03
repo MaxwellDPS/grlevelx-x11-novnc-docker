@@ -73,21 +73,21 @@ jobs:
           tag_list=""
 
           # Always include short commit
-          tag_list+="${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.COMMIT_SHA_SHORT }}"
+          tag_list+="$DOCKER_USER/winebase:${{ env.COMMIT_SHA_SHORT }}"
 
           # If we have a branch name, add it
           if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.BRANCH_NAME }}"
+            tag_list+=$'\n'"$DOCKER_USER/winebase:${{ env.BRANCH_NAME }}"
           fi
 
           # If we have a semver/user tag (i.e. DOCKER_IMAGE_TAG is set and not empty), add it
           if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.DOCKER_IMAGE_TAG }}"
+            tag_list+=$'\n'"$DOCKER_USER/winebase:${{ env.DOCKER_IMAGE_TAG }}"
           fi
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"${{ secrets.DOCKER_HUB_USER }}/winebase:latest"
+            tag_list+=$'\n'"$DOCKER_USER/winebase:latest"
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
