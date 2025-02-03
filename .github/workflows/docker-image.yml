@@ -98,9 +98,9 @@ jobs:
 
       - name: Adding markdown
         run: |
-          echo '## Docker 📦' >> $GITHUB_STEP_SUMMARY
+          echo '<details><summary>Docker Image Info</summary>' >> $GITHUB_STEP_SUMMARY
           echo -e '```json\n${{ steps.build.outputs.metadata }}\n```\n\n' >> $GITHUB_STEP_SUMMARY
-          echo -e '| Image | digest |\n|---|---|\n|${{ steps.build.outputs.imageid }}|${{ steps.build.outputs.digest }}|' >> $GITHUB_STEP_SUMMARY
+          echo -e '| Image | digest |\n|---|---|\n|${{ steps.build.outputs.imageid }}|${{ steps.build.outputs.digest }}|\n</details>' >> $GITHUB_STEP_SUMMARY
 
   ###############################################################################
   # Job 2: Build grlevelx (needs winebase)
@@ -156,3 +156,9 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Adding markdown
+        run: |
+          echo '<details><summary>Docker Image Info</summary>' >> $GITHUB_STEP_SUMMARY
+          echo -e '```json\n${{ steps.build.outputs.metadata }}\n```\n\n' >> $GITHUB_STEP_SUMMARY
+          echo -e '| Image | digest |\n|---|---|\n|${{ steps.build.outputs.imageid }}|${{ steps.build.outputs.digest }}|\n</details>' >> $GITHUB_STEP_SUMMARY
