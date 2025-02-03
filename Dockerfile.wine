@@ -78,15 +78,10 @@ WORKDIR /opt/
 
 # Install noVNC
 RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C /opt/ &&\
-    mv /opt/noVNC-1.5.0 /opt/novnc && \
+    mv /opt/noVNC-1.5.0 /opt/novnc && ln -s /opt/novnc/vnc.html /opt/novnc/index.html && \
     wget -O - https://github.com/novnc/websockify/archive/v0.12.0.tar.gz | tar -xzv -C /opt/ && \
     mv /opt/websockify-0.12.0 /opt/novnc/utils/websockify && \
     chmod -R 755 /opt/novnc/
-
-# Create noVNC web directories
-RUN mkdir -p /opt/novnc/web/ && mkdir -p /opt/novnc/web_ro/ && \
-    ln -s /opt/novnc/app/ /opt/novnc/web/app  && \
-    ln -s  /opt/novnc/app/ /opt/novnc/web_ro/app
 
 # Add noVNC html
 ADD utils/vnc_ro.html /opt/novnc/web_ro/vnc.html 
