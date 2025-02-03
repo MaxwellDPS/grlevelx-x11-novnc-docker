@@ -61,56 +61,36 @@ jobs:
           git push origin "${{ github.event.inputs.new_tag }}"
 
       ################################################################
-      # Step 2: Decide on environment variables for tagging
+      # Step 3: Build the list of Docker tags for winebase
       ################################################################
-      - name: Set environment variables
-        id: detect
-        run: |
-          # Always set short commit SHA for reference
-          echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-
-          # If manually triggered with a new_tag, use that
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.new_tag }}" ]]; then
-            echo "DOCKER_IMAGE_TAG=${{ github.event.inputs.new_tag }}" >> $GITHUB_ENV
-
-          # If push with a real Git tag, e.g., refs/tags/v1.2.3
-          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "DOCKER_IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-
-          # Otherwise, it's either push to a branch or PR
-          else
-            echo "DOCKER_IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-          fi
-
-          # Decide if we also push the 'latest' tag
-          # 1) If we're on push to main
-          # 2) Or the user set push_latest=true in workflow_dispatch
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]]; then
-            echo "PUSH_LATEST=true" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
-            echo "PUSH_LATEST=true" >> $GITHUB_ENV
-          else
-            echo "PUSH_LATEST=false" >> $GITHUB_ENV
-          fi
-
-      - name: Show environment
-        run: |
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Commit SHA Short: ${{ env.COMMIT_SHA_SHORT }}"
-          echo "Docker Image Tag: ${{ env.DOCKER_IMAGE_TAG }}"
-          echo "Push Latest: ${{ env.PUSH_LATEST }}"
-
       - name: Generate Docker tag list (winebase)
         id: taglist-winebase
         run: |
-          # Always include short commit + DOCKER_IMAGE_TAG
-          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
-          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/winebase:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+          DOCKER_USER="${{ secrets.DOCKER_HUB_USER }}"
+          IMAGE_NAME="winebase"
+
+          # Start with empty string
+          tag_list=""
+
+          # Always include short commit
+          tag_list+="${DOCKER_USER}/${IMAGE_NAME}:${{ env.COMMIT_SHA_SHORT }}"
+
+          # If we have a branch name, add it
+          if [ -n "${{ env.BRANCH_NAME }}" ]; then
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.BRANCH_NAME }}"
+          fi
+
+          # If we have a semver/user tag (i.e. DOCKER_IMAGE_TAG is set and not empty), add it
+          if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.DOCKER_IMAGE_TAG }}"
+          fi
 
           # Optionally include the "latest" tag
           if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/winebase:latest" >> $GITHUB_OUTPUT
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:latest"
           fi
+
+          echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
 
       - name: Docker login
         uses: docker/login-action@v3
@@ -144,56 +124,33 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v3
 
-      ################################################################
-      # Step 2 (again): Decide on environment variables for tagging
-      #
-      # Typically you'd share outputs from build-winebase, but if
-      # you want them recalculated the same way, just repeat.
-      ################################################################
-      - name: Set environment variables
-        id: detect
-        run: |
-          # Always set short commit SHA for reference
-          echo "COMMIT_SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-
-          # If manually triggered with a new_tag, use that
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.new_tag }}" ]]; then
-            echo "DOCKER_IMAGE_TAG=${{ github.event.inputs.new_tag }}" >> $GITHUB_ENV
-
-          # If push with a real Git tag, e.g., refs/tags/v1.2.3
-          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "DOCKER_IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-
-          # Otherwise, it's either push to a branch or PR
-          else
-            echo "DOCKER_IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
-          fi
-
-          # Decide if we also push the 'latest' tag
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "${{ github.event.repository.default_branch }}" ]]; then
-            echo "PUSH_LATEST=true" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.push_latest }}" == "true" ]]; then
-            echo "PUSH_LATEST=true" >> $GITHUB_ENV
-          else
-            echo "PUSH_LATEST=false" >> $GITHUB_ENV
-          fi
-
-      - name: Show environment
-        run: |
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Commit SHA Short: ${{ env.COMMIT_SHA_SHORT }}"
-          echo "Docker Image Tag: ${{ env.DOCKER_IMAGE_TAG }}"
-          echo "Push Latest: ${{ env.PUSH_LATEST }}"
-
       - name: Generate Docker tag list (grlevelx)
         id: taglist-grlevelx
         run: |
-          echo "tag_list=${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}" >> $GITHUB_OUTPUT
-          echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+          DOCKER_USER="${{ secrets.DOCKER_HUB_USER }}"
+          IMAGE_NAME="grlevelx"
 
-          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            echo "tag_list+=$'\n'${{ secrets.DOCKER_HUB_USER }}/grlevelx:latest" >> $GITHUB_OUTPUT
+          tag_list=""
+
+          # Always include short commit
+          tag_list+="${DOCKER_USER}/${IMAGE_NAME}:${{ env.COMMIT_SHA_SHORT }}"
+
+          # If we have a branch name, add it
+          if [ -n "${{ env.BRANCH_NAME }}" ]; then
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.BRANCH_NAME }}"
           fi
+
+          # If we have a semver/user tag, add it
+          if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:${{ env.DOCKER_IMAGE_TAG }}"
+          fi
+
+          # Optionally include the "latest" tag
+          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
+            tag_list+=$'\n'"${DOCKER_USER}/${IMAGE_NAME}:latest"
+          fi
+
+          echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
 
       - name: Docker login
         uses: docker/login-action@v3
