@@ -1,5 +1,4 @@
-ARG WINE_IMAGE
-FROM $WINE_IMAGE
+FROM winebase
 
 ARG GRLEVEL3_URL=https://www.grlevelx.com/downloads/gr2analyst_3_setup.exe \
     GRLEVEL3_UPDATE_URL=https://www.grlevelx.com/downloads/gr2analyst_3_update.exe

@@ -46,7 +46,7 @@ jobs:
   build-winebase:
     runs-on: ubuntu-latest
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
+      imageid: ${{ steps.build.outputs.imageid }}
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
@@ -84,6 +84,7 @@ jobs:
             type=raw,value=latest,enable=${{ inputs.push_latest == true }}
 
       - name: Build & push winebase image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./
@@ -144,7 +145,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          build-args: WINE_IMAGE=${{ job.build-winebase.outputs.tags[0] }}
+          build-contexts: winebase=${{ job.build-winebase.outputs.imageid }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
