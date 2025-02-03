@@ -48,18 +48,6 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v3
 
-      ################################################################
-      # Step 1: Optionally create a new Git tag if triggered manually
-      ################################################################
-      - name: Create git tag (when workflow_dispatch + new_tag)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.new_tag != '' }}
-        run: |
-          echo "Creating and pushing tag '${{ github.event.inputs.new_tag }}'..."
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "${{ github.event.inputs.new_tag }}"
-          git push origin "${{ github.event.inputs.new_tag }}"
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -101,10 +89,11 @@ jobs:
           context: ./
           file: ./Dockerfile.wine
           platforms: linux/amd64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ steps.taglist-winebase.outputs.tag_list }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   ###############################################################################
   # Job 2: Build grlevelx (needs winebase)
@@ -115,32 +104,6 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
-
-      - name: Generate Docker tag list (grlevelx)
-        id: taglist-grlevelx
-        run: |
-          tag_list=""
-
-          # Always include short commit
-          tag_list+="${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.COMMIT_SHA_SHORT }}"
-
-          # If we have a branch name, add it
-          if [ -n "${{ env.BRANCH_NAME }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.BRANCH_NAME }}"
-          fi
-
-          # If we have a semver/user tag, add it
-          if [ -n "${{ env.DOCKER_IMAGE_TAG }}" ]; then
-            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:${{ env.DOCKER_IMAGE_TAG }}"
-          fi
-
-          # Optionally include the "latest" tag
-          if [[ "${{ env.PUSH_LATEST }}" == "true" ]]; then
-            tag_list+=$'\n'"${{ secrets.DOCKERHUB_USERNAME }}/grlevelx:latest"
-          fi
-
-          echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
-          echo "::notice file=.github/workflows/docker-image.yml,line=151,endLine=151,title=Generated Docker tags for grlevelx::$tag_list"
 
       - name: Docker meta
         id: meta
@@ -182,8 +145,9 @@ jobs:
           context: ./
           file: ./Dockerfile
           platforms: linux/amd64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           build-args: WINE_TAG=${{ env.COMMIT_SHA_SHORT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-         labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
