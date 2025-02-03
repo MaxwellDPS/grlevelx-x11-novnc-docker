@@ -145,7 +145,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          build-contexts: winebase=${{ job.build-winebase.outputs.imageid }}
+          build-contexts: winebase=${{ jobs.build-winebase.outputs.imageid }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
