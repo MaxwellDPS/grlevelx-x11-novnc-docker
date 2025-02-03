@@ -83,8 +83,14 @@ RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C
     mv /opt/websockify-0.12.0 /opt/novnc/utils/websockify && \
     chmod -R 755 /opt/novnc/
 
+# Create noVNC web directories
+RUN mkdir -p /opt/novnc/web/ && mkdir -p /opt/novnc/web_ro/ ** \
+    ln -s /opt/novnc/app/ /opt/novnc/web/app/ && \
+    ln -s /opt/novnc/app/ /opt/novnc/web_ro/app/
+
 # Add noVNC html
-ADD utils/*.html /opt/novnc
+ADD utils/vnc_ro.html /opt/novnc/web_ro/index.html
+ADD utils/vnc.html /opt/novnc/web/index.html
 
 # Install supervisord config
 ADD supervisor/ /etc/supervisor/
