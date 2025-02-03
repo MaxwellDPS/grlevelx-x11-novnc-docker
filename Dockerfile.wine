@@ -78,10 +78,13 @@ WORKDIR /opt/
 
 # Install noVNC
 RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C /opt/ &&\
-    mv /opt/noVNC-1.5.0 /opt/novnc && ln -s /opt/novnc/vnc_lite.html /opt/novnc/index.html && \
+    mv /opt/noVNC-1.5.0 /opt/novnc && \
     wget -O - https://github.com/novnc/websockify/archive/v0.12.0.tar.gz | tar -xzv -C /opt/ && \
     mv /opt/websockify-0.12.0 /opt/novnc/utils/websockify && \
     chmod -R 755 /opt/novnc/
+
+# Add noVNC html
+ADD utils/*.html /opt/novnc
 
 # Install supervisord config
 ADD supervisor/ /etc/supervisor/
