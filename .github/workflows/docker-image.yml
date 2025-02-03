@@ -43,7 +43,7 @@ permissions:
 # Job 1: Build winebase
 ###############################################################################
 jobs:
-  build-winebase:
+  winebase:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -105,9 +105,9 @@ jobs:
   ###############################################################################
   # Job 2: Build grlevelx (needs winebase)
   ###############################################################################
-  build-grlevelx:
+  grlevelx:
     runs-on: ubuntu-latest
-    needs: build-winebase  # <-- This ensures grlevelx waits for winebase
+    needs: winebase  # <-- This ensures grlevelx waits for winebase
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
@@ -151,7 +151,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          build-contexts: winebase=docker-image://${{ vars.DOCKER_USERNAME }}/grlevelx@${{ needs.jobs.build-winebase.outputs.digest }}
+          build-contexts: winebase=docker-image://${{ vars.DOCKER_USERNAME }}/winebase@${{ needs.winebase.outputs.digest }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
