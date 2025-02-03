@@ -65,8 +65,9 @@ jobs:
       ################################################################
       - name: Generate Docker tag list (winebase)
         id: taglist-winebase
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_HUB_USER }}
         run: |
-          DOCKER_USER="${{ secrets.DOCKER_HUB_USER }}"
           IMAGE_NAME="winebase"
 
           # Start with empty string
@@ -91,7 +92,7 @@ jobs:
           fi
 
           echo "tag_list=$tag_list" >> $GITHUB_OUTPUT
-          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list" >> $GITHUB_OUTPUT
+          echo "::notice file=.github/workflows/docker-image.yml,line=94,endLine=94,title=Generated Docker tags for winebase::$tag_list"
 
 
       - name: Docker login
