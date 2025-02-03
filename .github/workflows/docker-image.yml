@@ -45,6 +45,8 @@ permissions:
 jobs:
   build-winebase:
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
@@ -68,6 +70,7 @@ jobs:
           images: ${{ vars.DOCKER_USERNAME }}/winebase
           # generate Docker tags based on the following events/attributes
           tags: |
+            type=sha
             type=schedule
             type=ref,event=tag
             type=ref,event=tag,pattern=v*
@@ -77,7 +80,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=latest,enable=${{ inputs.push_latest == true }}
 
       - name: Build & push winebase image
         uses: docker/build-push-action@v6
@@ -90,18 +94,6 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Build & push winebase latest tag
-        uses: docker/build-push-action@v6
-        if: ${{ inputs.push_latest == true }}
-        with:
-          context: ./
-          file: ./Dockerfile.wine
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ vars.DOCKER_USERNAME }}/winebase:latest
 
   ###############################################################################
   # Job 2: Build grlevelx (needs winebase)
@@ -132,6 +124,7 @@ jobs:
           images: ${{ vars.DOCKER_USERNAME }}/grlevelx
           # generate Docker tags based on the following events/attributes
           tags: |
+            type=sha
             type=schedule
             type=ref,event=tag
             type=ref,event=tag,pattern=v*
@@ -141,7 +134,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=latest,enable=${{ inputs.push_latest == true }}
 
       - name: Build & push grlevelx image
         uses: docker/build-push-action@v6
@@ -150,21 +144,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          build-args: WINE_IMAGE=${{ steps.meta.outputs.tags[0] }}
+          build-args: WINE_IMAGE=${{ job.build-winebase.outputs.tags[0] }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Build & push grlevelx latest tag
-        uses: docker/build-push-action@v6
-        if: ${{ inputs.push_latest == true }}
-        with:
-          context: ./
-          file: ./Dockerfile.wine
-          platforms: linux/amd64
-          push: ${{ github.event_name != 'pull_request' }}
-          build-contexts: WINE_IMAGE=${{ steps.meta.outputs.tags[0] }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ vars.DOCKER_USERNAME }}/grlevelx:latest
