@@ -1,4 +1,5 @@
-FROM professorcha0s/winebase:latest
+ARG WINE_TAG
+FROM professorcha0s/winebase:$WINE_TAG
 
 ARG GRLEVEL3_URL=https://www.grlevelx.com/downloads/gr2analyst_3_setup.exe \
     GRLEVEL3_UPDATE_URL=https://www.grlevelx.com/downloads/gr2analyst_3_update.exe

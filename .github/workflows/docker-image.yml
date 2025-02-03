@@ -213,6 +213,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: WINE_TAG=${{ env.COMMIT_SHA_SHORT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: ${{ steps.taglist-grlevelx.outputs.tag_list }}
