@@ -84,7 +84,7 @@ RUN wget -O - https://github.com/novnc/noVNC/archive/v1.5.0.tar.gz | tar -xzv -C
     chmod -R 755 /opt/novnc/
 
 # Create noVNC web directories
-RUN mkdir -p /opt/novnc/web/ && mkdir -p /opt/novnc/web_ro/ ** \
+RUN mkdir -p /opt/novnc/web/ && mkdir -p /opt/novnc/web_ro/ && \
     ln -s /opt/novnc/app/ /opt/novnc/web/app/ && \
     ln -s /opt/novnc/app/ /opt/novnc/web_ro/app/
 
