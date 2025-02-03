@@ -63,12 +63,9 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
-        env:
-          IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/winebase
         with:
           # list of Docker images to use as base name for tags
-          images: |
-            {{IMAGE_NAME}}
+          images: ${{ vars.DOCKER_USERNAME }}/winebase
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -130,12 +127,9 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
-        env:
-          IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/grlevelx
         with:
           # list of Docker images to use as base name for tags
-          images: |
-            {{IMAGE_NAME}}
+          images: ${{ vars.DOCKER_USERNAME }}/winebase
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
