@@ -18,12 +18,18 @@ RUN rm -f /tmp/.X0-lock && /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
     WINEPREFIX=/wine WINEARCH=win32 wine /wine/drive_c/grlevelx/grlevel3_2_update.exe /VERYSILENT && \
     rm -rf /wine/drive_c/grlevelx
 
+# Copy color tables
+ADD colortables/ /wine/drive_c/Program\ Files/GRLevelX/GR2Analyst_3/ColorTables/
+
 # Copy GRLevel3 supervisord config
 ADD app/grlevelx.conf /etc/supervisor/conf.d/
 
 # Copy grlevelx.sh
 ADD app/grlevelx.sh /opt/grlevelx.sh
 RUN chmod +x /opt/grlevelx.sh
+
+# Add volume for backup
+VOLUME [ "/config" ]
 
 # Expose noVNC port
 EXPOSE 8080 

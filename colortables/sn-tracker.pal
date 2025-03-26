@@ -1,0 +1,11 @@
+Product: SN
+units: dBZ
+step: 5
+
+
+color: -30 38 38 117
+color: -5 67 67 192
+color: 0 46 142 214
+color: 30 235 235 235
+color: 40 255 160 255
+color: 60 170 0 170

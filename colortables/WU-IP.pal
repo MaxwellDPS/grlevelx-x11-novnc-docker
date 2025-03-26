@@ -1,0 +1,8 @@
+product: IP
+units: dBZ
+step: 5
+
+
+
+Color: 5  255 200 222  140 010 105
+Color: 60  140 010 105
