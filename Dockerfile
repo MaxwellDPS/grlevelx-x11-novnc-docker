@@ -19,7 +19,9 @@ RUN rm -f /tmp/.X0-lock && /usr/bin/Xvfb :0 -screen 0 1024x768x16 & sleep 1 && \
     rm -rf /wine/drive_c/grlevelx
 
 # Copy color tables
-ADD colortables/ /wine/drive_c/Program\ Files/GRLevelX/GR2Analyst_3/ColorTables/
+ADD colortables/ /tmp/colortables/
+RUN cp -r /tmp/colortables/* /wine/drive_c/Program\ Files/GRLevelX/GR2Analyst_3/ColorTables/ && \
+    rm -rf /tmp/colortables
 
 # Copy GRLevel3 supervisord config
 ADD app/grlevelx.conf /etc/supervisor/conf.d/
